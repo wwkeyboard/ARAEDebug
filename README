@@ -1,13 +1,24 @@
 ARAEDebug
 =========
 
-Introduction goes here.
+ARAEDebug gives you a quick way to temporarily override ActiveRecord's default query logger. This is useful for printing the queries to the stdout instead of trying to dig around the logs to see what's going on. For example:
 
+ruby-1.8.6-p399 > ARD.redirect { IpBlock.new }
+-->   IpBlock Columns (24.3ms)   SHOW FIELDS FROM `ip_blocks`
+ => #<IpBlock id: nil, address: nil, prefix: nil, created_at: nil, updated_at: nil>
 
-Example
-=======
+You can even build your own loggers:
 
-Example goes here.
+ruby-1.8.6-p399 > my_logger = ARD::BasicLogger.new
+ => #<ARD::BasicLogger:0x10379c1e8>
+ruby-1.8.6-p399 > my_logger.class_eval "send(:define_method, :debug) {|a| puts \"~~~~ \#{a}\" }"
+ => #<Proc:0x0000000103779968@(eval):1>
+ruby-1.8.6-p399 > ARD.redirect(my_logger) { IpBlock.count }
+~~~~   SQL (0.3ms)   SELECT count(*) AS count_all FROM `ip_blocks`
+
+Building(loosely, very loosely) on the ideas in Handlers of Algebraic Effects by Gordon Plotkin and Matija Pretnar. The main idea I'm using is the ability to reach into a chunk of code and change its functionality based on some outside wrapper. In the paper Plotkin and Pretnar use exception handlers as an example of this idea.
+
+This project would be much easier if ActiveRecord could just raise something like "ActiveRecordLoggerAlgebraicEffect"(ok, bad name choice), that we could handle how we please. Somewhere out in the dispatcher Rails could catch that algebraic effect and pump it out the logger, if the effect got that far.
 
 
 Copyright (c) 2010 Aaron Lee, released under the MIT license
